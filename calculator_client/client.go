@@ -22,7 +22,8 @@ func main() {
 // call the functions
 	//doCalculate(c)
 	//doPrimeNumberDecomposition(c)
-	doAverageNumber(c)
+	//doAverageNumber(c)
+	doFindMaximum(c)
 }
 
 func doCalculate(c calculatorpb.CalculatorServiceClient) {
@@ -70,6 +71,7 @@ func doAverageNumber(c calculatorpb.CalculatorServiceClient) {
 			Number: 4,
 		},
 	}
+
 	stream, err := c.AverageNumber(context.Background())
 		if err != nil {
 			log.Fatalf("Error while receiving the stream: %v", err)
@@ -86,4 +88,57 @@ func doAverageNumber(c calculatorpb.CalculatorServiceClient) {
 	log.Printf("The average number is %v", response.GetNumber())
 
 
+}
+
+func doFindMaximum(c calculatorpb.CalculatorServiceClient) {
+	numbers := []*calculatorpb.FindMaximumRequest{
+		&calculatorpb.FindMaximumRequest{
+			Number: 1,
+		}, &calculatorpb.FindMaximumRequest{
+			Number: 6,
+		},&calculatorpb.FindMaximumRequest{
+			Number: 2,
+		},&calculatorpb.FindMaximumRequest{
+			Number: 3,
+		},&calculatorpb.FindMaximumRequest{
+			Number: 17,
+		},
+	}
+
+	stream, err := c.FindMaximum(context.Background())
+		if err != nil {
+			log.Fatalf("Error while setting client stream: %v", err)
+		}
+
+	waitc := make(chan struct{})
+
+	go func() {
+		for _, j := range numbers {
+			err := stream.Send(j)
+			log.Printf("Sending the number: %v", j.Number)
+				if err != nil {
+					log.Fatalf("Error while sending the client stream to the server: %v", err)
+				}
+		}
+		stream.CloseSend()
+			if err != nil {
+			log.Fatalf("Error while closing the client stream: %v", err)
+			}
+	}()
+
+	go func() {
+		for {
+			response, err := stream.Recv()
+				if err == io.EOF {
+					close(waitc)
+					break
+				} else if err != nil {
+					log.Fatalf("Error while receiving server stream: %v", err)
+				} else {
+					log.Printf("The biggest number so far received is: %v", response.GetNumber())
+				}
+		}
+	}()
+
+<-waitc
 }

@@ -29,6 +29,15 @@ message AverageNumberResponse {
   double number = 1;
 }
 
+// BiDi Streaming
+message FindMaximumRequest {
+  int32 number = 1;
+}
+
+message FindMaximumResponse {
+  int32 number = 1;
+}
+
 service CalculatorService {
   // Unary
   rpc Calculate(CalculatorRequest) returns (CalculatorResponse) {};
@@ -38,4 +47,7 @@ service CalculatorService {
 
   // Client Streaming
   rpc AverageNumber(stream AverageNumberRequest) returns (AverageNumberResponse) {};
+
+  // BiDi Streaming
+  rpc FindMaximum(stream FindMaximumRequest) returns (stream FindMaximumResponse) {};
 }
