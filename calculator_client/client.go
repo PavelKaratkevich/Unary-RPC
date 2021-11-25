@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/status"
 	"grpc-go-course/calculator/calculatorpb"
 	"io"
 	"log"
@@ -23,7 +24,8 @@ func main() {
 	//doCalculate(c)
 	//doPrimeNumberDecomposition(c)
 	//doAverageNumber(c)
-	doFindMaximum(c)
+	//doFindMaximum(c)
+	doSquareRoot(c)
 }
 
 func doCalculate(c calculatorpb.CalculatorServiceClient) {
@@ -104,18 +106,16 @@ func doFindMaximum(c calculatorpb.CalculatorServiceClient) {
 			Number: 17,
 		},
 	}
-
 	stream, err := c.FindMaximum(context.Background())
 		if err != nil {
 			log.Fatalf("Error while setting client stream: %v", err)
 		}
-
 	waitc := make(chan struct{})
-
 	go func() {
 		for _, j := range numbers {
 			err := stream.Send(j)
 			log.Printf("Sending the number: %v", j.Number)
+			time.Sleep(2000 * time.Millisecond)
 				if err != nil {
 					log.Fatalf("Error while sending the client stream to the server: %v", err)
 				}
@@ -139,6 +139,23 @@ func doFindMaximum(c calculatorpb.CalculatorServiceClient) {
 				}
 		}
 	}()
-
 <-waitc
+}
+
+func doSquareRoot(c calculatorpb.CalculatorServiceClient) {
+	var number int32 = -9
+
+	response, err := c.SquareRoot(context.Background(), &calculatorpb.SquareRootRequest{Number: number})
+		if err != nil {
+			status, ok := status.FromError(err)
+				if ok == true {
+					log.Printf("Error message from server: %v\n", status.Message())
+					log.Println(status.Code())
+					return
+				} else {
+					log.Fatalf("Some big trouble: %v", err)
+					return
+				}
+		}
+	log.Printf("Square root of number %v is equal to %v", number, response.GetNumber())
 }

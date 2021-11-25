@@ -6,9 +6,12 @@ import (
 	"context"
 	"fmt"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 	"grpc-go-course/calculator/calculatorpb"
 	"io"
 	"log"
+	"math"
 	"net"
 )
 
@@ -58,37 +61,35 @@ func (s *server) AverageNumber(stream calculatorpb.CalculatorService_AverageNumb
 
 func (s *server) FindMaximum(stream calculatorpb.CalculatorService_FindMaximumServer) error {
 	fmt.Printf("FindMaximum function was invoked\n")
-	var output []int32
+	var output int32
 	for {
 		request, err := stream.Recv()
 		if err == io.EOF {
-			break
+			return nil
 		} else if err != nil {
 				log.Fatalf("error while receiving client stream: %v", err)
 		} else {
-			// 11 4 15 20 17
-			// 0
-
 			lastNumber := request.GetNumber()
-				for i := 0; ; i++ {
-					if len(output) == 0 {
-						output = append(output, lastNumber)
-						stream.Send(&calculatorpb.FindMaximumResponse{Number: lastNumber})
-						break
-					} else if lastNumber <= output[len(output)-1] {
-						break
-					} else {
-						output = append(output, lastNumber)
-						stream.Send(&calculatorpb.FindMaximumResponse{Number: lastNumber})
-						break
-					}
-
+			if lastNumber > output {
+				output = lastNumber
+				stream.Send(&calculatorpb.FindMaximumResponse{Number: lastNumber})
+				if err != nil {
+					log.Fatalf("error while sending the number to client: %v", err)
 				}
+			}
 		}
 	}
 return nil
 }
 
+func (s *server) SquareRoot(ctx context.Context, req *calculatorpb.SquareRootRequest) (*calculatorpb.SquareRootResponse, error) {
+	number := req.GetNumber()
+	if number < 0 {
+		return nil, status.Errorf(codes.InvalidArgument, fmt.Sprintf("Received an invalid argument: %v", number))
+	} else {
+		return &calculatorpb.SquareRootResponse{Number: math.Sqrt(float64(number))}, nil
+	}
+}
 
 func main() {
 // create server
