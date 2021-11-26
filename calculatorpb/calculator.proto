@@ -61,4 +61,5 @@ service CalculatorService {
 
   // Unary RPC for error handling practive
   rpc SquareRoot(SquareRootRequest) returns (SquareRootResponse) {};
+
 }

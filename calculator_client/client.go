@@ -2,17 +2,24 @@ package main
 
 import (
 	"context"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/status"
 	"grpc-go-course/calculator/calculatorpb"
 	"io"
 	"log"
 	"time"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials"
+	"google.golang.org/grpc/status"
 )
 
 func main() {
 // create client's connection
-	cc, err := grpc.Dial("localhost:50051", grpc.WithInsecure())
+	certFile := "ssl/ca.crt"
+	creds, errCreds := credentials.NewClientTLSFromFile(certFile, "")
+		if errCreds != nil {
+			status.FromError(errCreds)
+		}
+
+	cc, err := grpc.Dial("localhost:50051", grpc.WithTransportCredentials(creds))
 		if err != nil {
 			log.Fatalf("Error while dialling client's connection: %v", err)
 		}
@@ -21,11 +28,12 @@ func main() {
 	c := calculatorpb.NewCalculatorServiceClient(cc)
 
 // call the functions
-	//doCalculate(c)
-	//doPrimeNumberDecomposition(c)
-	//doAverageNumber(c)
-	//doFindMaximum(c)
+	 doCalculate(c)
+	// doPrimeNumberDecomposition(c)
+	// doAverageNumber(c)
+	// doFindMaximum(c)
 	doSquareRoot(c)
+
 }
 
 func doCalculate(c calculatorpb.CalculatorServiceClient) {
@@ -88,8 +96,6 @@ func doAverageNumber(c calculatorpb.CalculatorServiceClient) {
 	}
 	response, err := stream.CloseAndRecv()
 	log.Printf("The average number is %v", response.GetNumber())
-
-
 }
 
 func doFindMaximum(c calculatorpb.CalculatorServiceClient) {
@@ -143,7 +149,7 @@ func doFindMaximum(c calculatorpb.CalculatorServiceClient) {
 }
 
 func doSquareRoot(c calculatorpb.CalculatorServiceClient) {
-	var number int32 = -9
+	var number int32 = 9
 
 	response, err := c.SquareRoot(context.Background(), &calculatorpb.SquareRootRequest{Number: number})
 		if err != nil {
@@ -159,3 +165,9 @@ func doSquareRoot(c calculatorpb.CalculatorServiceClient) {
 		}
 	log.Printf("Square root of number %v is equal to %v", number, response.GetNumber())
 }
+
+
+
+
+
+
